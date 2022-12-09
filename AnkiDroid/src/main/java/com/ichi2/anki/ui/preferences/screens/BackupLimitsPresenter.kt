@@ -20,6 +20,7 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import anki.config.Preferences.BackupLimits
+import com.ichi2.anki.BackupManager
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
@@ -76,6 +77,24 @@ class NewBackendBackupLimitsViewModel : ViewModel(), CollectionDirectoryProvider
 
         launchFetchingOfBackupLimits()
     }
+
+    suspend fun updateMaxBackups() {
+        withCol {
+            if (BackendFactory.defaultLegacySchema) {
+                BackupManager.deleteOldBackupsIfNeeded(path)
+            } else {
+                // the max backup option is not present in the new schema
+                /*
+                backend.createBackup(
+                    BackupManager.getBackupDirectoryFromCollection(this.path),
+                    force = false,
+                    waitForCompletion = true
+                )
+                backend.awaitBackupCompletion()
+                */
+            }
+        }
+    }
 }
 
 /**
@@ -112,6 +131,9 @@ class BackupLimitsPresenter(private val fragment: PreferenceFragmentCompat) : De
         dailyBackupsToKeepPreference = fragment.requirePreference(R.string.pref_daily_backups_to_keep_key)
         weeklyBackupsToKeepPreference = fragment.requirePreference(R.string.pref_weekly_backups_to_keep_key)
         monthlyBackupsToKeepPreference = fragment.requirePreference(R.string.pref_monthly_backups_to_keep_key)
+
+        maxNumberOfBackupsPreference
+            .launchWhenChanged<Int> { viewModel.updateMaxBackups() }
 
         minutesBetweenAutomaticBackupsPreference
             .launchWhenChanged<Int> { viewModel.updateBackupLimits { minimumIntervalMins = it } }

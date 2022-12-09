@@ -152,8 +152,7 @@ open class BackupManager {
             CompatHelper.compat.copyFile(colPath, zos)
             zos.close()
             // Delete old backup files if needed
-            val prefs = AnkiDroidApp.getSharedPrefs(AnkiDroidApp.instance.baseContext)
-            deleteColBackups(colPath, prefs.getInt("backupMax", 8))
+            deleteOldBackupsIfNeeded(colPath)
             // set timestamp of file in order to avoid creating a new backup unless its changed
             if (!backupFile.setLastModified(colFile.lastModified())) {
                 Timber.w("performBackupInBackground() setLastModified() failed on file %s", backupFile.name)
@@ -165,6 +164,11 @@ open class BackupManager {
             Timber.w(e)
             false
         }
+    }
+
+    private fun deleteOldBackupsIfNeeded(colPath: String) {
+        val prefs = AnkiDroidApp.getSharedPrefs(AnkiDroidApp.instance.baseContext)
+        deleteColBackups(colPath, prefs.getInt("backupMax", 8))
     }
 
     fun collectionIsTooSmallToBeValid(colFile: File): Boolean {
@@ -224,6 +228,10 @@ open class BackupManager {
 
         fun performBackupInBackground(path: String, time: Time): Boolean {
             return BackupManager().performBackupInBackground(path, BACKUP_INTERVAL, time)
+        }
+
+        fun deleteOldBackupsIfNeeded(colPath: String) {
+            return BackupManager().deleteOldBackupsIfNeeded(colPath)
         }
 
         /**
